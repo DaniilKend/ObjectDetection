@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Распознавание объектов с помощью TensorFlow.js</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #image-container {
+            position: relative;
+            display: inline-block;
+        }
+        #uploaded-image {
+            max-width: 100%;
+            height: auto;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Распознавание объектов на фото</h1>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <div id="image-container">
+        <img id="uploaded-image" src="" alt="Загруженное изображение" />
+        <canvas id="canvas"></canvas>
+    </div>
+    <div id="results"></div>
+
+    <!-- Подгружаем TensorFlow.js и модель COCO-SSD -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <script>
+        let model;
+
+        // Загружаем модель при запуске страницы
+        cocoSsd.load().then(loadedModel => {
+            model = loadedModel;
+            console.log("Модель COCO-SSD загружена");
+        });
+
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const resultsDiv = document.getElementById('results');
+
+        imageUpload.addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImage.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        uploadedImage.onload = function() {
+            // Настраиваем размеры холста под изображение
+            canvas.width = uploadedImage.width;
+            canvas.height = uploadedImage.height;
+            // Очищаем холст
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Запускаем распознавание
+            detectObjects();
+        }
+
+        function detectObjects() {
+            if (!model) {
+                alert("Модель еще не загружена, пожалуйста, подождите...");
+                return;
+            }
+
+            model.detect(uploadedImage).then(predictions => {
+                // Очищаем холст перед рисованием
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Выводим результаты
+                resultsDiv.innerHTML = `<h2>Обнаружено объектов: ${predictions.length}</h2>`;
+                predictions.forEach(pred => {
+                    // Рисуем рамку
+                    ctx.strokeStyle = '#00FF00';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(pred['bbox'][0], pred['bbox'][1], pred['bbox'][2], pred['bbox'][3]);
+
+                    // Добавляем подпись
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#00FF00';
+                    ctx.fillText(
+                        `${pred['class']} (${(pred['score']*100).toFixed(1)}%)`,
+                        pred['bbox'][0],
+                        pred['bbox'][1] > 20 ? pred['bbox'][1] - 5 : pred['bbox'][1] + 15
+                    );
+
+                    // Можно вывести список объектов
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!-- Импорт TensorFlow.js библиотеки -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js" type="text/javascript"></script>
+
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <title>Распознование объектов через веб-камеру или на изображении с помощью TensorFlow.js</title>
+    <meta charset="utf-8">
+    <!-- Импорт таблицу стилей веб-страницы -->
+    <link rel="stylesheet" href="style.css">
+  </head>  
+  <body>
+    <h1>Распознование объектов через веб-камеру с помощью TensorFlow.js</h1>
+ 
+    <p>Подождите, пока модель загрузится, прежде чем нажимать кнопку, чтобы включить веб-камеру - после этого она станет видимой для использования.</p>
+    
+    <section id="demos" class="invisible">
+ 
+      
+      <div id="liveView" class="camView">
+        <button id="webcamButton">Включить веб-камеру</button>
+        <video id="webcam" autoplay muted width="640" height="480"></video>
+      </div>
+    </section>
+
+
+    <h1>Распознавание объектов на изображении</h1>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <div id="image-container">
+        <img id="uploaded-image" src="" alt="Загруженное изображение" />
+        <canvas id="canvas"></canvas>
+    </div>
+    <div id="results"></div>
+    
+
+ 
+    <!-- Импорт библиотеки TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js" type="text/javascript"></script>
+    <!-- Загрузка модели coco-ssd для распознавания объектов на изображениях -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <!-- Импорт JavaScript страницы -->
+    <script src="script.js" defer></script>
+<script>
+        let model;
+
+        // Загружаем модель при запуске страницы
+        cocoSsd.load().then(loadedModel => {
+            model = loadedModel;
+            console.log("Модель COCO-SSD загружена");
+        });
+
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const resultsDiv = document.getElementById('results');
+
+        imageUpload.addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImage.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        uploadedImage.onload = function() {
+            // Настраиваем размеры холста под изображение
+            canvas.width = uploadedImage.width;
+            canvas.height = uploadedImage.height;
+            // Очищаем холст
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Запускаем распознавание
+            detectObjects();
+        }
+
+        function detectObjects() {
+            if (!model) {
+                alert("Модель еще не загружена, пожалуйста, подождите...");
+                return;
+            }
+
+            model.detect(uploadedImage).then(predictions => {
+                // Очищаем холст перед рисованием
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Выводим результаты
+                resultsDiv.innerHTML = `<h2>Обнаружено объектов: ${predictions.length}</h2>`;
+                predictions.forEach(pred => {
+                    // Рисуем рамку
+                    ctx.strokeStyle = '#00FF00';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(pred['bbox'][0], pred['bbox'][1], pred['bbox'][2], pred['bbox'][3]);
+
+                    // Добавляем подпись
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#00FF00';
+                    ctx.fillText(
+                        `${pred['class']} (${(pred['score']*100).toFixed(1)}%)`,
+                        pred['bbox'][0],
+                        pred['bbox'][1] > 20 ? pred['bbox'][1] - 5 : pred['bbox'][1] + 15
+                    );
+
+                    // Можно вывести список объектов
+                });
+            });
+        }
+    </script>
+
+
+
+
+
+  </body>
+
+
+
+
+
+
+
+
+
+</html>
