@@ -3,8 +3,6 @@ const liveView = document.getElementById('liveView');
 const demosSection = document.getElementById('demos');
 const enableWebcamButton = document.getElementById('webcamButton');
 
-
-imageUpload.addEventListener('change', handleImageUpload);
 // Проверьт, поддерживается ли доступ к веб-камере.
 function getUserMediaSupported() {
   return !!(navigator.mediaDevices &&
@@ -97,16 +95,3 @@ model.detect(video).then(function (predictions) {
     // Вызов этой функции еще раз, чтобы предсказывать, когда браузер будет готов.
     window.requestAnimationFrame(predictWebcam);
   });}
-
-let model;
-
-// Загружаем модель при запуске страницы
-cocoSsd.load().then(loadedModel => {
-            model = loadedModel;
-            console.log("Модель COCO-SSD загружена");
-});
-
-       
-
-
-
